@@ -1,0 +1,196 @@
+#!/usr/bin/env node
+/**
+ * Fetch ~600 curated movies from TMDB and write a valid movies.ts to stdout.
+ *
+ * Usage:
+ *   node scripts/seed-movies.mjs <TMDB_API_KEY> > packages/shared/src/movies.ts
+ *
+ * Free API key: https://www.themoviedb.org/settings/api  (read-only key, no cost)
+ *
+ * Criteria:
+ *   - vote_count >= 500  (enough ratings to be recognisable)
+ *   - poster_path present
+ *   - No duplicate IDs
+ *   - ~600 movies across popular/top_rated + all major genres
+ */
+
+const API_KEY = process.argv[2];
+if (!API_KEY) {
+  console.error("Usage: node scripts/seed-movies.mjs <TMDB_API_KEY>");
+  console.error("Get a free key at: https://www.themoviedb.org/settings/api");
+  process.exit(1);
+}
+
+const BASE = "https://api.themoviedb.org/3";
+const MIN_VOTES = 500;
+
+// TMDB genre IDs we care about (covers all major genres)
+const GENRES = [
+  28,   // Action
+  12,   // Adventure
+  16,   // Animation
+  35,   // Comedy
+  80,   // Crime
+  99,   // Documentary
+  18,   // Drama
+  10751, // Family
+  14,   // Fantasy
+  36,   // History
+  27,   // Horror
+  10402, // Music
+  9648, // Mystery
+  10749, // Romance
+  878,  // Science Fiction
+  53,   // Thriller
+  10752, // War
+  37,   // Western
+];
+
+async function tmdb(path, params = {}) {
+  const url = new URL(`${BASE}${path}`);
+  url.searchParams.set("api_key", API_KEY);
+  url.searchParams.set("language", "en-US");
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error(`TMDB ${path} → ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+async function fetchPages(path, params, maxPages) {
+  const results = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const data = await tmdb(path, { ...params, page });
+    results.push(...(data.results ?? []));
+    if (page >= (data.total_pages ?? 1)) break;
+    await sleep(250); // stay well under TMDB rate limit (40 req/10s)
+  }
+  return results;
+}
+
+function keep(m) {
+  return (
+    m.poster_path &&
+    m.vote_count >= MIN_VOTES &&
+    m.genre_ids?.length > 0 &&
+    m.release_date?.length >= 4
+  );
+}
+
+function toEntry(m) {
+  return {
+    id: m.id,
+    title: m.title,
+    year: parseInt(m.release_date.slice(0, 4), 10),
+    genre_ids: m.genre_ids,
+    poster_path: m.poster_path,
+    popularity: Math.round(m.popularity * 10) / 10,
+  };
+}
+
+async function main() {
+  process.stderr.write("Fetching popular movies (10 pages)…\n");
+  const popular = await fetchPages("/movie/popular", {}, 10);
+
+  process.stderr.write("Fetching top-rated movies (10 pages)…\n");
+  const topRated = await fetchPages("/movie/top_rated", {}, 10);
+
+  // Genre-targeted discover pages to ensure coverage of underrepresented genres
+  const genreResults = [];
+  for (const genreId of GENRES) {
+    process.stderr.write(`Fetching genre ${genreId}…\n`);
+    const results = await fetchPages(
+      "/discover/movie",
+      {
+        with_genres: genreId,
+        sort_by: "vote_count.desc",
+        "vote_count.gte": MIN_VOTES,
+      },
+      4
+    );
+    genreResults.push(...results);
+    await sleep(150);
+  }
+
+  // Decade-targeted fetches to improve era diversity
+  const decades = [
+    { start: "1960-01-01", end: "1979-12-31" },
+    { start: "1980-01-01", end: "1989-12-31" },
+    { start: "1990-01-01", end: "1999-12-31" },
+    { start: "2000-01-01", end: "2009-12-31" },
+  ];
+  const decadeResults = [];
+  for (const { start, end } of decades) {
+    process.stderr.write(`Fetching movies ${start.slice(0, 4)}–${end.slice(0, 4)}…\n`);
+    const results = await fetchPages(
+      "/discover/movie",
+      {
+        sort_by: "vote_count.desc",
+        "vote_count.gte": MIN_VOTES,
+        "primary_release_date.gte": start,
+        "primary_release_date.lte": end,
+      },
+      4
+    );
+    decadeResults.push(...results);
+    await sleep(150);
+  }
+
+  // Merge, deduplicate, filter
+  const all = [...popular, ...topRated, ...genreResults, ...decadeResults];
+  const seen = new Set();
+  const movies = [];
+  for (const m of all) {
+    if (!keep(m) || seen.has(m.id)) continue;
+    seen.add(m.id);
+    movies.push(toEntry(m));
+  }
+
+  // Sort by popularity descending so most-recognisable come first
+  movies.sort((a, b) => b.popularity - a.popularity);
+
+  process.stderr.write(`\nTotal unique movies after filtering: ${movies.length}\n`);
+
+  // Build genre distribution report
+  const genreCounts = {};
+  for (const m of movies) {
+    const g = m.genre_ids[0];
+    genreCounts[g] = (genreCounts[g] ?? 0) + 1;
+  }
+  process.stderr.write("Genre distribution (primary):\n");
+  for (const [g, count] of Object.entries(genreCounts).sort((a, b) => b[1] - a[1])) {
+    process.stderr.write(`  ${g}: ${count}\n`);
+  }
+
+  // Write TypeScript file to stdout
+  const lines = [
+    `import type { MovieInfo } from "./types";`,
+    ``,
+    `// Auto-generated by scripts/seed-movies.mjs — do not edit by hand`,
+    `// ${movies.length} movies · min vote_count: ${MIN_VOTES} · sorted by popularity desc`,
+    `export const MOVIES: MovieInfo[] = [`,
+  ];
+
+  for (const m of movies) {
+    lines.push(
+      `  { id: ${m.id}, title: ${JSON.stringify(m.title)}, year: ${m.year}, genre_ids: [${m.genre_ids.join(", ")}], poster_path: ${JSON.stringify(m.poster_path)}, popularity: ${m.popularity} },`
+    );
+  }
+
+  lines.push(`];`);
+  lines.push(``);
+  lines.push(`export function getMoviesByGenre(genreId: number): MovieInfo[] {`);
+  lines.push(`  return MOVIES.filter(m => m.genre_ids[0] === genreId);`);
+  lines.push(`}`);
+  lines.push(``);
+
+  process.stdout.write(lines.join("\n"));
+}
+
+main().catch(err => {
+  process.stderr.write(`Error: ${err.message}\n`);
+  process.exit(1);
+});
