@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Round, GameStats, GameMode } from "@moviguessr/shared";
 import { fetchRound } from "@/lib/api";
-import { calculateScore, getClassicDifficulty, type ScoreBreakdown } from "@/lib/gameLogic";
+import { calculateScore, getClassicDifficulty, BLUR_CONFIG, type ScoreBreakdown } from "@/lib/gameLogic";
 import { loadStats, saveResult, saveClassicRun } from "@/lib/localStorage";
 import { loadSettings } from "@/lib/settings";
 import { useBlur } from "@/lib/useBlur";
@@ -59,17 +59,12 @@ export default function GameBoard({ mode }: GameBoardProps) {
     ? getClassicDifficulty(questionNum)
     : infiniteDifficulty;
 
-  // init blur: easy=4px, medium=6px, hard=8px (from worker)
-  // exponents tuned so blur hits ~1.5 px (recognisable) at:
-  //   easy   t=0.40 (12 s) → e≈0.5  (sqrt ease-out, fast early drop)
-  //   medium t=0.70 (21 s) → e≈0.8  (mild ease-out)
-  //   hard   t=0.85 (25.5 s) → e≈1.3 (mild ease-in, holds blur longer)
-  const easingExponent = difficulty === "easy" ? 0.5 : difficulty === "hard" ? 1.3 : 0.8;
+  const { initialBlurPx, easingExponent } = BLUR_CONFIG[difficulty];
 
   const { currentBlurPx, progress } = useBlur(
     startTimeRef,
     round?.timerSeconds ?? 30,
-    round?.initialBlurPx ?? 6,
+    initialBlurPx,
     phase !== "playing",
     roundKey,
     easingExponent,

@@ -38,6 +38,19 @@ export function calculateScore(
   return { base, speedBonus, streakMultiplier, difficultyMultiplier, total };
 }
 
+// Single source of truth for blur — used by both classic and infinite modes.
+// initialBlurPx: starting blur (8→10→12 gives a visible journey without being a blob)
+// easingExponent: < 1 = ease-out (clears fast early), > 1 = ease-in (holds blur, clears near end)
+// Tuned so blur reaches ~2 px ("recognisable") at:
+//   easy   t=0.40 (12 s into 30 s)
+//   medium t=0.70 (21 s)
+//   hard   t=0.85 (25.5 s)
+export const BLUR_CONFIG: Record<Difficulty, { initialBlurPx: number; easingExponent: number }> = {
+  easy:   { initialBlurPx: 6, easingExponent: 0.3 },
+  medium: { initialBlurPx: 7, easingExponent: 0.7 },
+  hard:   { initialBlurPx: 8, easingExponent: 1.3 },
+};
+
 export function getClassicDifficulty(questionNum: number): Difficulty {
   if (questionNum <= 5)  return "easy";
   if (questionNum <= 14) return "medium";
