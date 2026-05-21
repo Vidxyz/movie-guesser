@@ -44,7 +44,7 @@ export default function BlurTimer({ progress, timerSeconds, stopped }: BlurTimer
 
       <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
         <div
-          className="h-full rounded-full transition-[width] duration-100"
+          className="h-full rounded-full"
           style={{
             width: `${barPct}%`,
             background: tier.color,

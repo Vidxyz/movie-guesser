@@ -18,6 +18,7 @@ interface ResultModalProps {
   timedOut: boolean;
   backdropPath: string;
   onNext: () => void;
+  onEnd: () => void;
 }
 
 const TMDB_BASE = "https://image.tmdb.org/t/p/w1280";
@@ -39,6 +40,7 @@ export default function ResultModal({
   timedOut,
   backdropPath,
   onNext,
+  onEnd,
 }: ResultModalProps) {
   const btnRef = useRef<HTMLButtonElement>(null);
   const [shareLabel, setShareLabel] = useState<"Share" | "Shared!" | "Copied!">("Share");
@@ -178,6 +180,13 @@ export default function ResultModal({
               Next round →
             </button>
           </div>
+
+          <button
+            onClick={onEnd}
+            className="w-full mt-3 py-2.5 rounded-xl border border-white/10 text-xs font-medium text-white/40 hover:bg-white/5 hover:text-white/70 active:scale-[0.98] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            End game
+          </button>
         </div>
       </div>
     </div>

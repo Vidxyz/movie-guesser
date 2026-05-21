@@ -12,13 +12,16 @@ export function useBlur(
   timerSeconds: number,
   initialBlurPx: number,
   stopped: boolean,
+  roundKey: number,
 ): BlurState {
   const [state, setState] = useState<BlurState>({ currentBlurPx: initialBlurPx, progress: 0 });
   const rafRef = useRef<number | null>(null);
 
+  // Reset to full blur whenever a new round begins (roundKey) or the timer config changes.
+  // This runs even when consecutive rounds share the same difficulty settings.
   useEffect(() => {
     setState({ currentBlurPx: initialBlurPx, progress: 0 });
-  }, [initialBlurPx, timerSeconds]);
+  }, [initialBlurPx, timerSeconds, roundKey]);
 
   useEffect(() => {
     if (stopped) {

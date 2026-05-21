@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Round, GameStats } from "@moviguessr/shared";
 import { fetchRound } from "@/lib/api";
 import { calculateScore, type ScoreBreakdown } from "@/lib/gameLogic";
@@ -23,8 +24,10 @@ interface GuessEffect {
 }
 
 export default function GameBoard() {
+  const router = useRouter();
   const [phase, setPhase]           = useState<GamePhase>("loading");
   const [round, setRound]           = useState<Round | null>(null);
+  const [roundKey, setRoundKey]     = useState(0);
   const [guessed, setGuessed]       = useState<number | null>(null);
   const [timedOut, setTimedOut]     = useState(false);
   const [scoreBreakdown, setScoreBreakdown] = useState<ScoreBreakdown | null>(null);
@@ -40,6 +43,7 @@ export default function GameBoard() {
     round?.timerSeconds ?? 30,
     round?.initialBlurPx ?? 16,
     phase !== "playing",
+    roundKey,
   );
 
   const loadRound = useCallback(async () => {
@@ -52,6 +56,7 @@ export default function GameBoard() {
       const newRound = await fetchRound(difficulty);
       setRound(newRound);
       startTimeRef.current = Date.now();
+      setRoundKey(k => k + 1);
       setPhase("playing");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load round");
@@ -70,6 +75,8 @@ export default function GameBoard() {
   // Auto-timeout when progress reaches 1.0
   useEffect(() => {
     if (phase === "playing" && progress >= 1) {
+      // Guard against stale progress=1.0 carried over from the previous round
+      if (Date.now() - startTimeRef.current < 500) return;
       const breakdown = calculateScore(false, 1, stats.currentStreak, difficulty);
       setTimedOut(true);
       setGuessed(null);
@@ -114,6 +121,8 @@ export default function GameBoard() {
     },
     [round, phase, stats.currentStreak, difficulty, progress, triggerEffect]
   );
+
+  const handleEnd = useCallback(() => router.push("/stats"), [router]);
 
   const flashBg =
     guessEffect?.kind === "correct" ? "bg-emerald-500" :
@@ -237,6 +246,7 @@ export default function GameBoard() {
           timedOut={timedOut}
           backdropPath={round.backdropPath}
           onNext={loadRound}
+          onEnd={handleEnd}
         />
       )}
     </div>
