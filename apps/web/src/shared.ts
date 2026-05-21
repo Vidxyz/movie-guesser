@@ -31,6 +31,7 @@ export const GENRE_MAP: Record<number, string> = {
 };
 
 export type Difficulty = "easy" | "medium" | "hard";
+export type GameMode = "classic" | "infinite";
 
 export interface RoundChoice {
   id: number;
@@ -58,13 +59,26 @@ export interface GameResult {
   timestamp: string;
 }
 
+export interface ClassicRun {
+  totalScore: number;
+  correctAnswers: number;
+  timestamp: string;
+}
+
 export interface GameStats {
+  // Infinite mode
   totalGames: number;
   correctAnswers: number;
   currentStreak: number;
-  bestStreak: number;
-  bestStreakDifficulty: Difficulty;
+  bestStreakEasy: number;
+  bestStreakMedium: number;
+  bestStreakHard: number;
   totalScore: number;
   currentDifficulty: Difficulty;
   history: GameResult[];
+
+  // Classic mode
+  classicBestScore: number;
+  classicBestCorrect: number;
+  classicHistory: ClassicRun[];
 }

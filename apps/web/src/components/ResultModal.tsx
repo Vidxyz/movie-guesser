@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Difficulty } from "@moviguessr/shared";
+import type { Difficulty, GameMode } from "@moviguessr/shared";
 import { GENRE_MAP } from "@moviguessr/shared";
 import type { ScoreBreakdown } from "@/lib/gameLogic";
 import { getDifficultyLabel } from "@/lib/gameLogic";
@@ -19,6 +19,9 @@ interface ResultModalProps {
   backdropPath: string;
   onNext: () => void;
   onEnd: () => void;
+  mode?: GameMode;
+  questionNum?: number;
+  totalQuestions?: number;
 }
 
 const TMDB_BASE = "https://image.tmdb.org/t/p/w1280";
@@ -41,7 +44,11 @@ export default function ResultModal({
   backdropPath,
   onNext,
   onEnd,
+  mode,
+  questionNum,
+  totalQuestions = 20,
 }: ResultModalProps) {
+  const isClassic = mode === "classic";
   const btnRef = useRef<HTMLButtonElement>(null);
   const [shareLabel, setShareLabel] = useState<"Share" | "Shared!" | "Copied!">("Share");
 
@@ -64,8 +71,8 @@ export default function ResultModal({
   const subText = timedOut
     ? "The poster fully revealed — you ran out of time"
     : correct
-    ? "You spotted it in time!"
-    : "Better luck next time";
+    ? isClassic && questionNum ? `Q${questionNum}/${totalQuestions} · You spotted it in time!` : "You spotted it in time!"
+    : isClassic && questionNum ? `Q${questionNum}/${totalQuestions} · Better luck next time` : "Better luck next time";
 
   return (
     <div
@@ -177,7 +184,7 @@ export default function ResultModal({
               className="flex-[2] py-3 rounded-xl bg-[var(--accent)] text-white font-bold text-sm tracking-wide hover:bg-[var(--accent-dark)] active:scale-[0.98] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
               style={{ boxShadow: "0 0 20px var(--accent-glow)" }}
             >
-              Next round →
+              {isClassic ? "Next question →" : "Next round →"}
             </button>
           </div>
 

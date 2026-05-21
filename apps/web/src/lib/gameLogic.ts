@@ -38,6 +38,12 @@ export function calculateScore(
   return { base, speedBonus, streakMultiplier, difficultyMultiplier, total };
 }
 
+export function getClassicDifficulty(questionNum: number): Difficulty {
+  if (questionNum <= 5)  return "easy";
+  if (questionNum <= 14) return "medium";
+  return "hard";
+}
+
 export function getDifficultyLabel(d: Difficulty): string {
   return d === "easy" ? "Easy" : d === "hard" ? "Hard" : "Medium";
 }

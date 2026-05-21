@@ -29,8 +29,8 @@ export default function LandingPage() {
     setDifficulty(loadSettings().difficulty);
   }, []);
 
-  const hasPlayed = stats && stats.totalGames > 0;
-  const accuracy  = hasPlayed
+  const hasPlayed = stats && (stats.totalGames > 0 || stats.classicHistory.length > 0);
+  const accuracy  = stats && stats.totalGames > 0
     ? Math.round((stats.correctAnswers / stats.totalGames) * 100)
     : null;
 
@@ -61,9 +61,19 @@ export default function LandingPage() {
               Your progress
             </p>
             <div className="grid grid-cols-3 gap-3">
-              <MiniStat label="Games"    value={stats.totalGames} />
-              <MiniStat label="Accuracy" value={`${accuracy}%`} />
-              <MiniStat label="Score"    value={stats.totalScore.toLocaleString()} accent />
+              {stats.classicHistory.length > 0 ? (
+                <>
+                  <MiniStat label="Classic runs" value={stats.classicHistory.length} />
+                  <MiniStat label="Best run"     value={`${stats.classicBestCorrect}/20`} />
+                  <MiniStat label="Best score"   value={stats.classicBestScore.toLocaleString()} accent />
+                </>
+              ) : (
+                <>
+                  <MiniStat label="Games"    value={stats.totalGames} />
+                  <MiniStat label="Accuracy" value={accuracy !== null ? `${accuracy}%` : "—"} />
+                  <MiniStat label="Score"    value={stats.totalScore.toLocaleString()} accent />
+                </>
+              )}
             </div>
             {stats.currentStreak > 0 && (
               <div className="mt-3 flex items-center gap-2 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3 py-2">
@@ -71,11 +81,17 @@ export default function LandingPage() {
                 <span className="text-amber-400 font-semibold text-sm">
                   {stats.currentStreak}-game streak active
                 </span>
-                {stats.bestStreak > 0 && (
-                  <span className="ml-auto text-amber-500/60 text-xs">
-                    Best: {stats.bestStreak}
-                  </span>
-                )}
+              </div>
+            )}
+            {stats.classicHistory.length > 0 && (
+              <div className="mt-3 flex items-center gap-2 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3 py-2">
+                <span aria-hidden="true">🏆</span>
+                <span className="text-amber-400 font-semibold text-sm">
+                  Best classic run: {stats.classicBestCorrect}/20
+                </span>
+                <span className="ml-auto text-amber-500/60 text-xs tabular-nums">
+                  {stats.classicBestScore.toLocaleString()} pts
+                </span>
               </div>
             )}
           </section>

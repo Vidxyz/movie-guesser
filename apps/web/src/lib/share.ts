@@ -56,6 +56,46 @@ function buildText({ correct, correctTitle, correctYear, genres, score, streak, 
   return lines.join("\n");
 }
 
+export interface ClassicSharePayload {
+  totalScore: number;
+  correctAnswers: number;
+}
+
+function classicGrade(correct: number): string {
+  if (correct === 20) return "🎭 Perfect score — you ARE the Academy";
+  if (correct >= 18)  return "🎬 Cinema Maestro";
+  if (correct >= 15)  return "🎥 Film Buff";
+  if (correct >= 10)  return "🍿 Casual Viewer";
+  return "🎞️ Still learning the ropes";
+}
+
+function buildClassicText({ totalScore, correctAnswers }: ClassicSharePayload): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "moviguessr.vercel.app";
+  const blocks = correctAnswers > 0
+    ? Array.from({ length: 20 }, (_, i) => i < correctAnswers ? "🟨" : "⬛").join("")
+    : "⬛".repeat(20);
+
+  return [
+    "🏆 moviguessr Classic",
+    "",
+    `${correctAnswers}/20 correct · ${totalScore.toLocaleString()} pts`,
+    classicGrade(correctAnswers),
+    "",
+    blocks,
+    "",
+    origin,
+  ].join("\n");
+}
+
+export async function shareClassicResult(payload: ClassicSharePayload): Promise<"shared" | "copied"> {
+  const text = buildClassicText(payload);
+  if (typeof navigator !== "undefined" && navigator.share) {
+    try { await navigator.share({ text }); return "shared"; } catch { /* fall through */ }
+  }
+  await navigator.clipboard.writeText(text);
+  return "copied";
+}
+
 export async function shareResult(payload: SharePayload): Promise<"shared" | "copied"> {
   const text = buildText(payload);
 

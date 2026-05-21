@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Round, GameStats } from "@moviguessr/shared";
+import type { Round, GameStats, GameMode } from "@moviguessr/shared";
 import { fetchRound } from "@/lib/api";
-import { calculateScore, type ScoreBreakdown } from "@/lib/gameLogic";
-import { loadStats, saveResult } from "@/lib/localStorage";
+import { calculateScore, getClassicDifficulty, type ScoreBreakdown } from "@/lib/gameLogic";
+import { loadStats, saveResult, saveClassicRun } from "@/lib/localStorage";
 import { loadSettings } from "@/lib/settings";
 import { useBlur } from "@/lib/useBlur";
 import PosterViewer from "./PosterViewer";
@@ -13,8 +13,9 @@ import ChoiceGrid from "./ChoiceGrid";
 import ScoreDisplay from "./ScoreDisplay";
 import ResultModal from "./ResultModal";
 import BlurTimer from "./BlurTimer";
+import VictoryModal from "./VictoryModal";
 
-type GamePhase = "loading" | "playing" | "revealed";
+type GamePhase = "loading" | "playing" | "revealed" | "victory";
 type FlashKind  = "correct" | "wrong" | "timeout";
 
 interface GuessEffect {
@@ -23,8 +24,16 @@ interface GuessEffect {
   key: number;
 }
 
-export default function GameBoard() {
+interface GameBoardProps {
+  mode: GameMode;
+}
+
+const CLASSIC_TOTAL = 20;
+
+export default function GameBoard({ mode }: GameBoardProps) {
   const router = useRouter();
+
+  // Common state
   const [phase, setPhase]           = useState<GamePhase>("loading");
   const [round, setRound]           = useState<Round | null>(null);
   const [roundKey, setRoundKey]     = useState(0);
@@ -36,7 +45,25 @@ export default function GameBoard() {
   const [guessEffect, setGuessEffect] = useState<GuessEffect | null>(null);
   const startTimeRef = useRef<number>(0);
 
-  const difficulty = loadSettings().difficulty;
+  // Classic-mode state
+  const [questionNum, setQuestionNum]     = useState(1);
+  const [classicScore, setClassicScore]   = useState(0);
+  const [classicCorrect, setClassicCorrect] = useState(0);
+  const [lastBlurPx, setLastBlurPx]       = useState(0);
+  // Ref keeps questionNum readable synchronously in loadRound without making it a dep.
+  const questionNumRef = useRef(1);
+
+  // Difficulty: auto in classic, user-chosen in infinite
+  const infiniteDifficulty = loadSettings().difficulty;
+  const difficulty = mode === "classic"
+    ? getClassicDifficulty(questionNum)
+    : infiniteDifficulty;
+
+  // Easing exponent per difficulty:
+  //   easy   0.5 → sqrt, fast early unblur (recognizable in first third)
+  //   medium 1.0 → linear, steady throughout
+  //   hard   1.5 → mild ease-in, clears noticeably in the final ~6 s
+  const easingExponent = difficulty === "easy" ? 0.5 : difficulty === "hard" ? 1.5 : 1.0;
 
   const { currentBlurPx, progress } = useBlur(
     startTimeRef,
@@ -44,6 +71,7 @@ export default function GameBoard() {
     round?.initialBlurPx ?? 16,
     phase !== "playing",
     roundKey,
+    easingExponent,
   );
 
   const loadRound = useCallback(async () => {
@@ -53,7 +81,9 @@ export default function GameBoard() {
     setScoreBreakdown(null);
     setError(null);
     try {
-      const newRound = await fetchRound(difficulty);
+      // Read questionNum from ref so this callback never stales on questionNum state.
+      const d = mode === "classic" ? getClassicDifficulty(questionNumRef.current) : infiniteDifficulty;
+      const newRound = await fetchRound(d);
       setRound(newRound);
       startTimeRef.current = Date.now();
       setRoundKey(k => k + 1);
@@ -62,9 +92,12 @@ export default function GameBoard() {
       setError(e instanceof Error ? e.message : "Failed to load round");
       setPhase("loading");
     }
-  }, [difficulty]);
+  }, [mode, infiniteDifficulty]);  // questionNum intentionally excluded — read via ref
 
-  useEffect(() => { loadRound(); }, [loadRound]);
+  // Load on initial mount only. All subsequent loads are driven by explicit handleNext /
+  // handleReplay calls, which update questionNumRef before calling loadRound().
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadRound(); }, []);
 
   const triggerEffect = useCallback((kind: FlashKind, score: number) => {
     const key = Date.now();
@@ -75,28 +108,41 @@ export default function GameBoard() {
   // Auto-timeout when progress reaches 1.0
   useEffect(() => {
     if (phase === "playing" && progress >= 1) {
-      // Guard against stale progress=1.0 carried over from the previous round
       if (Date.now() - startTimeRef.current < 500) return;
+
       const breakdown = calculateScore(false, 1, stats.currentStreak, difficulty);
+      setLastBlurPx(currentBlurPx);
       setTimedOut(true);
       setGuessed(null);
       setScoreBreakdown(breakdown);
-      setPhase("revealed");
       triggerEffect("timeout", 0);
 
-      if (round) {
-        const newStats = saveResult({
-          movieId: round.correctId,
-          title: round.correctTitle,
-          correct: false,
-          score: 0,
-          difficulty,
-          timestamp: new Date().toISOString(),
-        });
-        setStats(newStats);
+      if (mode === "classic") {
+        if (questionNum >= CLASSIC_TOTAL) {
+          // Save run then go to victory
+          const run = { totalScore: classicScore, correctAnswers: classicCorrect, timestamp: new Date().toISOString() };
+          saveClassicRun(run);
+          setPhase("victory");
+        } else {
+          setPhase("revealed");
+        }
+      } else {
+        setPhase("revealed");
+        if (round) {
+          const newStats = saveResult({
+            movieId: round.correctId,
+            title: round.correctTitle,
+            correct: false,
+            score: 0,
+            difficulty,
+            timestamp: new Date().toISOString(),
+          });
+          setStats(newStats);
+        }
       }
     }
-  }, [phase, progress, round, stats.currentStreak, difficulty, triggerEffect]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, progress]);
 
   const handleGuess = useCallback(
     (id: number) => {
@@ -105,24 +151,60 @@ export default function GameBoard() {
       const breakdown = calculateScore(correct, progress, stats.currentStreak, difficulty);
 
       setGuessed(id);
+      setLastBlurPx(currentBlurPx);
       setScoreBreakdown(breakdown);
-      setPhase("revealed");
       triggerEffect(correct ? "correct" : "wrong", breakdown.total);
 
-      const newStats = saveResult({
-        movieId: round.correctId,
-        title: round.correctTitle,
-        correct,
-        score: breakdown.total,
-        difficulty,
-        timestamp: new Date().toISOString(),
-      });
-      setStats(newStats);
+      if (mode === "classic") {
+        const newClassicScore   = classicScore + breakdown.total;
+        const newClassicCorrect = classicCorrect + (correct ? 1 : 0);
+        setClassicScore(newClassicScore);
+        setClassicCorrect(newClassicCorrect);
+
+        if (questionNum >= CLASSIC_TOTAL) {
+          const run = { totalScore: newClassicScore, correctAnswers: newClassicCorrect, timestamp: new Date().toISOString() };
+          saveClassicRun(run);
+          setPhase("victory");
+        } else {
+          setPhase("revealed");
+        }
+      } else {
+        setPhase("revealed");
+        const newStats = saveResult({
+          movieId: round.correctId,
+          title: round.correctTitle,
+          correct,
+          score: breakdown.total,
+          difficulty,
+          timestamp: new Date().toISOString(),
+        });
+        setStats(newStats);
+      }
     },
-    [round, phase, stats.currentStreak, difficulty, progress, triggerEffect]
+    [round, phase, stats.currentStreak, difficulty, progress, currentBlurPx, triggerEffect, mode, classicScore, classicCorrect, questionNum]
   );
 
-  const handleEnd = useCallback(() => router.push("/stats"), [router]);
+  const handleNext = useCallback(() => {
+    if (mode === "classic") {
+      // Update ref synchronously so loadRound reads the correct next question number.
+      const nextQ = questionNumRef.current + 1;
+      questionNumRef.current = nextQ;
+      setQuestionNum(nextQ);
+    }
+    loadRound();
+  }, [mode, loadRound]);
+
+  // replace() removes the game board from the history stack so the Nav's router.back()
+  // doesn't return to an in-progress round.
+  const handleEnd = useCallback(() => router.replace(mode === "classic" ? "/play" : "/stats"), [router, mode]);
+
+  const handleReplay = useCallback(() => {
+    questionNumRef.current = 1;
+    setQuestionNum(1);
+    setClassicScore(0);
+    setClassicCorrect(0);
+    loadRound();
+  }, [loadRound]);
 
   const flashBg =
     guessEffect?.kind === "correct" ? "bg-emerald-500" :
@@ -130,19 +212,27 @@ export default function GameBoard() {
 
   return (
     <div className="flex flex-col min-h-[100svh] bg-[var(--bg)]">
-      <ScoreDisplay streak={stats.currentStreak} score={stats.totalScore} difficulty={difficulty} />
+      {/* Disable all header interactions during victory so no link can push the game into history */}
+      <div className={phase === "victory" ? "pointer-events-none" : ""}>
+        <ScoreDisplay
+          streak={stats.currentStreak}
+          score={mode === "classic" ? classicScore : stats.totalScore}
+          difficulty={difficulty}
+          mode={mode}
+          questionNum={questionNum}
+          totalQuestions={CLASSIC_TOTAL}
+        />
+      </div>
 
       {/* ── Screen-level guess feedback ────────────────────────────────── */}
       {guessEffect && (
         <>
-          {/* Full-viewport color flash */}
           <div
             key={`flash-${guessEffect.key}`}
             className={`fixed inset-0 z-60 pointer-events-none animate-screen-flash ${flashBg}`}
             aria-hidden="true"
           />
 
-          {/* Floating score (correct only) */}
           {guessEffect.kind === "correct" && guessEffect.score > 0 && (
             <div
               key={`score-${guessEffect.key}`}
@@ -158,7 +248,6 @@ export default function GameBoard() {
             </div>
           )}
 
-          {/* ✕ icon (wrong only) */}
           {guessEffect.kind === "wrong" && (
             <div
               key={`x-${guessEffect.key}`}
@@ -193,7 +282,7 @@ export default function GameBoard() {
           </div>
         )}
 
-        {phase !== "loading" && round && (
+        {(phase === "playing" || phase === "revealed") && round && (
           <>
             <section aria-labelledby="poster-heading">
               <h1 id="poster-heading" className="sr-only">Movie still — guess which movie this is</h1>
@@ -245,8 +334,22 @@ export default function GameBoard() {
           difficulty={difficulty}
           timedOut={timedOut}
           backdropPath={round.backdropPath}
-          onNext={loadRound}
+          onNext={handleNext}
           onEnd={handleEnd}
+          mode={mode}
+          questionNum={questionNum}
+          totalQuestions={CLASSIC_TOTAL}
+        />
+      )}
+
+      {phase === "victory" && round && (
+        <VictoryModal
+          finalScore={classicScore}
+          correctAnswers={classicCorrect}
+          lastBackdropPath={round.backdropPath}
+          lastBlurPx={lastBlurPx}
+          onPlayAgain={handleReplay}
+          onHome={() => router.replace("/play")}
         />
       )}
     </div>
