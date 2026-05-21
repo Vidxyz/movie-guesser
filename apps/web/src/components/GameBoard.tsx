@@ -128,7 +128,7 @@ export default function GameBoard() {
               <div className="bg-white rounded-2xl border border-[#e4e7ed] shadow-sm overflow-hidden">
                 <div className="p-3">
                   <PosterViewer
-                    posterPath={round.posterPath}
+                    backdropPath={round.backdropPath}
                     currentBlurPx={currentBlurPx}
                     revealed={phase === "revealed"}
                     movieTitle={round.correctTitle}
@@ -173,6 +173,7 @@ export default function GameBoard() {
           streak={stats.currentStreak}
           difficulty={difficulty}
           timedOut={timedOut}
+          backdropPath={round.backdropPath}
           onNext={loadRound}
         />
       )}

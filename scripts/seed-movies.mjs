@@ -9,7 +9,7 @@
  *
  * Criteria:
  *   - vote_count >= 500  (enough ratings to be recognisable)
- *   - poster_path present
+ *   - backdrop_path present (scene still, no title text)
  *   - No duplicate IDs
  *   - ~600 movies across popular/top_rated + all major genres
  */
@@ -73,7 +73,7 @@ async function fetchPages(path, params, maxPages) {
 
 function keep(m) {
   return (
-    m.poster_path &&
+    m.backdrop_path &&
     m.vote_count >= MIN_VOTES &&
     m.genre_ids?.length > 0 &&
     m.release_date?.length >= 4
@@ -86,7 +86,7 @@ function toEntry(m) {
     title: m.title,
     year: parseInt(m.release_date.slice(0, 4), 10),
     genre_ids: m.genre_ids,
-    poster_path: m.poster_path,
+    backdrop_path: m.backdrop_path,
     popularity: Math.round(m.popularity * 10) / 10,
   };
 }
@@ -176,7 +176,7 @@ async function main() {
 
   for (const m of movies) {
     lines.push(
-      `  { id: ${m.id}, title: ${JSON.stringify(m.title)}, year: ${m.year}, genre_ids: [${m.genre_ids.join(", ")}], poster_path: ${JSON.stringify(m.poster_path)}, popularity: ${m.popularity} },`
+      `  { id: ${m.id}, title: ${JSON.stringify(m.title)}, year: ${m.year}, genre_ids: [${m.genre_ids.join(", ")}], backdrop_path: ${JSON.stringify(m.backdrop_path)}, popularity: ${m.popularity} },`
     );
   }
 

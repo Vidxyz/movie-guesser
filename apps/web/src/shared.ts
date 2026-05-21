@@ -5,7 +5,7 @@ export interface MovieInfo {
   title: string;
   year: number;
   genre_ids: number[];
-  poster_path: string;
+  backdrop_path: string;
   popularity: number;
 }
 
@@ -43,7 +43,7 @@ export interface Round {
   correctTitle: string;
   correctYear: number;
   genres: number[];
-  posterPath: string;
+  backdropPath: string;
   choices: RoundChoice[];
   timerSeconds: number;
   initialBlurPx: number;

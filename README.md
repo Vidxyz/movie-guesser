@@ -8,7 +8,7 @@ Guess the movie from its blurred poster. The image gradually sharpens as the tim
 |---|---|---|
 | Frontend | Next.js 16 (App Router) | Vercel |
 | Backend API | Hono on Cloudflare Workers | Cloudflare |
-| Movie posters | TMDB CDN (`image.tmdb.org`) | — |
+| Movie stills | TMDB CDN (`image.tmdb.org`) | — |
 | Movie data | Static curated list (~600 movies) | — |
 | State | localStorage (streaks, score, history) | — |
 
@@ -159,7 +159,7 @@ The movie list lives at `packages/shared/src/movies.ts` and is compiled into the
 ### Data
 
 - **Static movie list** — the ~600-movie list is compiled at build time. New releases won't appear until the list is regenerated and the project is redeployed.
-- **TMDB poster CDN** — posters are served from `image.tmdb.org` without authentication. TMDB's CDN has no formal SLA for this usage pattern; if they restrict unauthenticated access in the future, poster images would break.
+- **TMDB CDN** — backdrop stills are served from `image.tmdb.org` without authentication. TMDB's CDN has no formal SLA for this usage pattern; if they restrict unauthenticated access in the future, images would break.
 - **No anti-cheat** — the correct answer is included in the API response. A player inspecting network traffic can see it before guessing. Scores are local-only with no competitive leaderboard, so this is intentional.
 - **No deduplication between rounds** — the same movie can appear in consecutive rounds.
 

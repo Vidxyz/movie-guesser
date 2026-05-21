@@ -16,10 +16,11 @@ interface ResultModalProps {
   streak: number;
   difficulty: Difficulty;
   timedOut: boolean;
+  backdropPath: string;
   onNext: () => void;
 }
 
-const TMDB_BASE = "https://image.tmdb.org/t/p/w500";
+const TMDB_BASE = "https://image.tmdb.org/t/p/w1280";
 
 export default function ResultModal({
   correct,
@@ -30,6 +31,7 @@ export default function ResultModal({
   streak,
   difficulty,
   timedOut,
+  backdropPath,
   onNext,
 }: ResultModalProps) {
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -72,6 +74,21 @@ export default function ResultModal({
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-[#0f172a]/40 backdrop-blur-sm"
     >
       <div className="animate-fade-up w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
+        {/* fully unblurred backdrop reveal */}
+        <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`${TMDB_BASE}${backdropPath}`}
+            alt={correctTitle}
+            className="w-full h-full object-cover"
+            draggable={false}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <p className="absolute bottom-2 left-3 right-3 text-white font-bold text-sm drop-shadow-sm truncate">
+            {correctTitle} <span className="font-normal opacity-70">({correctYear})</span>
+          </p>
+        </div>
+
         <div className={`h-1.5 ${correct ? "bg-[#059669]" : timedOut ? "bg-[#f59e0b]" : "bg-[#dc2626]"}`} />
 
         <div className="p-6">

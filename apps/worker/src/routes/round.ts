@@ -88,7 +88,7 @@ round.get("/", (c) => {
     correctTitle: movie.title,
     correctYear: movie.year,
     genres: movie.genre_ids,
-    posterPath: movie.poster_path,
+    backdropPath: movie.backdrop_path,
     choices,
     timerSeconds: config.timerSeconds,
     initialBlurPx: config.initialBlurPx,
