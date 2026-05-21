@@ -39,16 +39,15 @@ export function calculateScore(
 }
 
 // Single source of truth for blur — used by both classic and infinite modes.
-// initialBlurPx: starting blur (8→10→12 gives a visible journey without being a blob)
-// easingExponent: < 1 = ease-out (clears fast early), > 1 = ease-in (holds blur, clears near end)
-// Tuned so blur reaches ~2 px ("recognisable") at:
-//   easy   t=0.40 (12 s into 30 s)
-//   medium t=0.70 (21 s)
-//   hard   t=0.85 (25.5 s)
+// All modes use ease-out (exponent < 1) so unblur is always perceptibly progressing.
+// Tuned so blur reaches ~0.5 px (sharp on retina) at:
+//   easy   t=0.60 (18 s) — last 40% clear
+//   medium t=0.80 (24 s) — last 20% clear
+//   hard   t=0.90 (27 s) — last 10% clear
 export const BLUR_CONFIG: Record<Difficulty, { initialBlurPx: number; easingExponent: number }> = {
-  easy:   { initialBlurPx: 6, easingExponent: 0.3 },
-  medium: { initialBlurPx: 7, easingExponent: 0.7 },
-  hard:   { initialBlurPx: 8, easingExponent: 1.3 },
+  easy:   { initialBlurPx: 4, easingExponent: 0.26 },
+  medium: { initialBlurPx: 7, easingExponent: 0.33 },
+  hard:   { initialBlurPx: 9, easingExponent: 0.54 },
 };
 
 export function getClassicDifficulty(questionNum: number): Difficulty {

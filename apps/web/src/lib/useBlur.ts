@@ -60,7 +60,9 @@ export function useBlur(
         rafRef.current = null;
       }
     };
-  }, [stopped, timerSeconds, initialBlurPx, easingExponent, startTimeRef]);
+  // roundKey ensures the RAF loop restarts on every new round even when difficulty
+  // (and therefore initialBlurPx / easingExponent) stays the same between rounds.
+  }, [stopped, timerSeconds, initialBlurPx, easingExponent, startTimeRef, roundKey]);
 
   return state;
 }

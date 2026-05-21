@@ -29,6 +29,7 @@ interface GameBoardProps {
 }
 
 const CLASSIC_TOTAL = 20;
+const TIMER_SECONDS = 30;
 
 export default function GameBoard({ mode }: GameBoardProps) {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function GameBoard({ mode }: GameBoardProps) {
 
   const { currentBlurPx, progress } = useBlur(
     startTimeRef,
-    round?.timerSeconds ?? 30,
+    TIMER_SECONDS,
     initialBlurPx,
     phase !== "playing",
     roundKey,
@@ -295,7 +296,7 @@ export default function GameBoard({ mode }: GameBoardProps) {
               <div className="mt-2.5 px-1">
                 <BlurTimer
                   progress={progress}
-                  timerSeconds={round.timerSeconds}
+                  timerSeconds={TIMER_SECONDS}
                   stopped={phase === "revealed"}
                 />
               </div>

@@ -26,10 +26,12 @@ export default function PosterViewer({ backdropPath, currentBlurPx, revealed, mo
         src={`${TMDB_BASE}${backdropPath}`}
         alt={revealed ? movieTitle : "Movie still — blurred"}
         onLoad={() => setLoaded(true)}
-        className={`w-full h-full object-cover rounded-xl select-none transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className="w-full h-full object-cover rounded-xl select-none"
         style={{
           filter: `blur(${blurPx}px)`,
-          transition: "filter 0.1s linear",
+          opacity: loaded ? 1 : 0,
+          transition: "opacity 300ms",
+          willChange: "filter",
         }}
         draggable={false}
       />
