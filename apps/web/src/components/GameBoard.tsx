@@ -14,6 +14,13 @@ import ResultModal from "./ResultModal";
 import BlurTimer from "./BlurTimer";
 
 type GamePhase = "loading" | "playing" | "revealed";
+type FlashKind  = "correct" | "wrong" | "timeout";
+
+interface GuessEffect {
+  kind: FlashKind;
+  score: number;
+  key: number;
+}
 
 export default function GameBoard() {
   const [phase, setPhase]           = useState<GamePhase>("loading");
@@ -23,6 +30,7 @@ export default function GameBoard() {
   const [scoreBreakdown, setScoreBreakdown] = useState<ScoreBreakdown | null>(null);
   const [stats, setStats]           = useState<GameStats>(() => loadStats());
   const [error, setError]           = useState<string | null>(null);
+  const [guessEffect, setGuessEffect] = useState<GuessEffect | null>(null);
   const startTimeRef = useRef<number>(0);
 
   const difficulty = loadSettings().difficulty;
@@ -53,6 +61,12 @@ export default function GameBoard() {
 
   useEffect(() => { loadRound(); }, [loadRound]);
 
+  const triggerEffect = useCallback((kind: FlashKind, score: number) => {
+    const key = Date.now();
+    setGuessEffect({ kind, score, key });
+    setTimeout(() => setGuessEffect(null), 1200);
+  }, []);
+
   // Auto-timeout when progress reaches 1.0
   useEffect(() => {
     if (phase === "playing" && progress >= 1) {
@@ -61,6 +75,7 @@ export default function GameBoard() {
       setGuessed(null);
       setScoreBreakdown(breakdown);
       setPhase("revealed");
+      triggerEffect("timeout", 0);
 
       if (round) {
         const newStats = saveResult({
@@ -74,7 +89,7 @@ export default function GameBoard() {
         setStats(newStats);
       }
     }
-  }, [phase, progress, round, stats.currentStreak, difficulty]);
+  }, [phase, progress, round, stats.currentStreak, difficulty, triggerEffect]);
 
   const handleGuess = useCallback(
     (id: number) => {
@@ -85,6 +100,7 @@ export default function GameBoard() {
       setGuessed(id);
       setScoreBreakdown(breakdown);
       setPhase("revealed");
+      triggerEffect(correct ? "correct" : "wrong", breakdown.total);
 
       const newStats = saveResult({
         movieId: round.correctId,
@@ -96,16 +112,64 @@ export default function GameBoard() {
       });
       setStats(newStats);
     },
-    [round, phase, stats.currentStreak, difficulty, progress]
+    [round, phase, stats.currentStreak, difficulty, progress, triggerEffect]
   );
 
+  const flashBg =
+    guessEffect?.kind === "correct" ? "bg-emerald-500" :
+    guessEffect?.kind === "wrong"   ? "bg-red-500"     : "bg-amber-500";
+
   return (
-    <div className="flex flex-col min-h-[100svh] bg-[#f8f9fb]">
+    <div className="flex flex-col min-h-[100svh] bg-[var(--bg)]">
       <ScoreDisplay streak={stats.currentStreak} score={stats.totalScore} difficulty={difficulty} />
 
-      <main className="flex flex-col flex-1 w-full max-w-xl mx-auto px-4 py-5 gap-4" aria-label="Game board">
+      {/* ── Screen-level guess feedback ────────────────────────────────── */}
+      {guessEffect && (
+        <>
+          {/* Full-viewport color flash */}
+          <div
+            key={`flash-${guessEffect.key}`}
+            className={`fixed inset-0 z-60 pointer-events-none animate-screen-flash ${flashBg}`}
+            aria-hidden="true"
+          />
+
+          {/* Floating score (correct only) */}
+          {guessEffect.kind === "correct" && guessEffect.score > 0 && (
+            <div
+              key={`score-${guessEffect.key}`}
+              className="fixed inset-0 z-60 pointer-events-none flex items-center justify-center"
+              aria-hidden="true"
+            >
+              <span
+                className="animate-score-rise font-black text-5xl text-white select-none"
+                style={{ textShadow: "0 0 32px rgba(52,211,153,0.9), 0 2px 8px rgba(0,0,0,0.6)" }}
+              >
+                +{guessEffect.score.toLocaleString()}
+              </span>
+            </div>
+          )}
+
+          {/* ✕ icon (wrong only) */}
+          {guessEffect.kind === "wrong" && (
+            <div
+              key={`x-${guessEffect.key}`}
+              className="fixed inset-0 z-60 pointer-events-none flex items-center justify-center"
+              aria-hidden="true"
+            >
+              <span
+                className="animate-wrong-x-pop text-7xl select-none"
+                style={{ filter: "drop-shadow(0 0 24px rgba(239,68,68,0.9))" }}
+              >
+                ✕
+              </span>
+            </div>
+          )}
+        </>
+      )}
+
+      <main className="flex flex-col flex-1 w-full max-w-xl mx-auto px-4 py-4 gap-4" aria-label="Game board">
         {error && (
-          <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm text-center">
+          <div role="alert" className="bg-red-500/15 border border-red-500/30 text-red-400 rounded-xl p-4 text-sm text-center">
             {error}{" "}
             <button onClick={loadRound} className="underline ml-1 hover:no-underline focus:outline-none">
               Try again
@@ -114,41 +178,39 @@ export default function GameBoard() {
         )}
 
         {phase === "loading" && !error && (
-          <div className="flex flex-col items-center justify-center flex-1 gap-3 text-[#94a3b8]" aria-live="polite">
+          <div className="flex flex-col items-center justify-center flex-1 gap-3 text-white/30" aria-live="polite">
             <div className="w-7 h-7 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" aria-hidden="true" />
-            <span className="text-sm">Loading poster…</span>
+            <span className="text-sm">Loading…</span>
           </div>
         )}
 
         {phase !== "loading" && round && (
           <>
             <section aria-labelledby="poster-heading">
-              <h1 id="poster-heading" className="sr-only">Movie poster — guess which movie this is</h1>
+              <h1 id="poster-heading" className="sr-only">Movie still — guess which movie this is</h1>
 
-              <div className="bg-white rounded-2xl border border-[#e4e7ed] shadow-sm overflow-hidden">
-                <div className="p-3">
-                  <PosterViewer
-                    backdropPath={round.backdropPath}
-                    currentBlurPx={currentBlurPx}
-                    revealed={phase === "revealed"}
-                    movieTitle={round.correctTitle}
-                  />
-                </div>
+              <div className="rounded-2xl overflow-hidden">
+                <PosterViewer
+                  backdropPath={round.backdropPath}
+                  currentBlurPx={currentBlurPx}
+                  revealed={phase === "revealed"}
+                  movieTitle={round.correctTitle}
+                />
+              </div>
 
-                <div className="px-3 pt-1 pb-3 border-t border-[#f1f3f7]">
-                  <BlurTimer
-                    progress={progress}
-                    timerSeconds={round.timerSeconds}
-                    stopped={phase === "revealed"}
-                  />
-                </div>
+              <div className="mt-2.5 px-1">
+                <BlurTimer
+                  progress={progress}
+                  timerSeconds={round.timerSeconds}
+                  stopped={phase === "revealed"}
+                />
               </div>
             </section>
 
             <section aria-labelledby="choices-heading">
               <h2
                 id="choices-heading"
-                className="text-xs font-semibold text-[#94a3b8] uppercase tracking-widest mb-3 text-center"
+                className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-3 text-center"
               >
                 Which movie is this?
               </h2>

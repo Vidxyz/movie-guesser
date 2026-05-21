@@ -10,38 +10,49 @@ interface ChoiceGridProps {
   onGuess: (id: number) => void;
 }
 
+const LETTERS = ["A", "B", "C", "D"];
+
 export default function ChoiceGrid({ choices, correctId, guessed, onGuess }: ChoiceGridProps) {
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
-    if (guessed !== null) setAnimating(true);
+    if (guessed !== null) {
+      setAnimating(true);
+      const id = setTimeout(() => setAnimating(false), 800);
+      return () => clearTimeout(id);
+    }
   }, [guessed]);
 
   return (
     <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" aria-label="Choose the movie">
-      <legend className="sr-only">Pick the movie shown in the poster</legend>
-      {choices.map((choice) => {
+      <legend className="sr-only">Pick the movie shown in the still</legend>
+      {choices.map((choice, idx) => {
         const isCorrect = choice.id === correctId;
         const isGuessed = choice.id === guessed;
         const revealed  = guessed !== null;
 
-        let baseClass: string;
+        let containerClass: string;
+        let letterClass: string;
         let animClass = "";
 
         if (!revealed) {
-          baseClass =
-            "border-[#e4e7ed] bg-white hover:border-[var(--accent)] hover:bg-[var(--accent-light)] hover:shadow-sm text-[#0f172a]";
+          containerClass = "border-white/10 bg-white/5 text-white hover:bg-white/10 hover:border-white/20 cursor-pointer active:scale-[0.985]";
+          letterClass    = "bg-white/8 text-white/40";
         } else if (isCorrect && isGuessed) {
-          baseClass = "border-[#059669] bg-[#ecfdf5] text-[#065f46]";
-          animClass = animating ? "animate-pop animate-pulse-green" : "";
+          containerClass = "border-emerald-400/80 bg-emerald-500/25 text-emerald-200 cursor-default";
+          letterClass    = "bg-emerald-500/40 text-emerald-200";
+          animClass      = animating ? "animate-correct-pop animate-correct-glow" : "";
         } else if (isCorrect) {
-          baseClass = "border-[#059669] bg-[#ecfdf5] text-[#065f46]";
-          animClass = animating ? "animate-pop" : "";
+          containerClass = "border-emerald-500/60 bg-emerald-500/15 text-emerald-300 cursor-default";
+          letterClass    = "bg-emerald-500/25 text-emerald-400";
+          animClass      = animating ? "animate-correct-pop" : "";
         } else if (isGuessed) {
-          baseClass = "border-[#dc2626] bg-[#fef2f2] text-[#991b1b]";
-          animClass = animating ? "animate-shake" : "";
+          containerClass = "border-red-400/80 bg-red-500/25 text-red-200 cursor-default";
+          letterClass    = "bg-red-500/40 text-red-200";
+          animClass      = animating ? "animate-shake animate-wrong-flash" : "";
         } else {
-          baseClass = "border-[#e4e7ed] bg-[#f8f9fb] text-[#94a3b8] cursor-default";
+          containerClass = "border-white/5 bg-white/3 text-white/25 cursor-default";
+          letterClass    = "bg-white/5 text-white/20";
         }
 
         return (
@@ -51,36 +62,34 @@ export default function ChoiceGrid({ choices, correctId, guessed, onGuess }: Cho
             disabled={revealed}
             aria-label={`${choice.title} (${choice.year})`}
             aria-pressed={isGuessed}
-            aria-disabled={revealed && !isCorrect && !isGuessed}
             className={`
-              flex items-center gap-3 p-4 rounded-xl border-2 transition-colors text-left
+              relative flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border
+              transition-all duration-150 text-left
               focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
-              ${baseClass} ${animClass}
-              ${!revealed ? "cursor-pointer active:scale-[0.985]" : ""}
+              ${containerClass} ${animClass}
             `}
           >
             <div
-              className={`
-                w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-lg
-                ${!revealed ? "bg-[#f1f3f7] text-[var(--accent-dark)]" : ""}
-                ${revealed && isCorrect ? "bg-[#d1fae5] text-[#059669]" : ""}
-                ${revealed && isGuessed && !isCorrect ? "bg-[#fee2e2] text-[#dc2626]" : ""}
-                ${revealed && !isCorrect && !isGuessed ? "bg-[#f1f3f7] text-[#94a3b8]" : ""}
-              `}
+              className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold ${letterClass}`}
               aria-hidden="true"
             >
-              🎬
+              {revealed && isCorrect ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              ) : revealed && isGuessed && !isCorrect ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              ) : (
+                LETTERS[idx]
+              )}
             </div>
+
             <div className="min-w-0 flex-1">
-              <span className="block font-semibold text-sm leading-snug">{choice.title}</span>
-              <span className="block text-xs opacity-60 mt-0.5">{choice.year}</span>
+              <span className="block font-semibold text-sm leading-snug truncate">{choice.title}</span>
+              <span className="block text-xs opacity-50 mt-0.5">{choice.year}</span>
             </div>
-            {revealed && isCorrect && (
-              <span className="ml-auto text-[#059669] shrink-0 text-lg font-bold" aria-hidden="true">✓</span>
-            )}
-            {revealed && isGuessed && !isCorrect && (
-              <span className="ml-auto text-[#dc2626] shrink-0 text-lg font-bold" aria-hidden="true">✕</span>
-            )}
           </button>
         );
       })}

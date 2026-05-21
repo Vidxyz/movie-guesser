@@ -8,15 +8,15 @@ const LINKS: { href: string; label: string; mobileIcon?: React.ReactNode }[] = [
     href: "/how-to-play",
     label: "How to play",
     mobileIcon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="10"/>
         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
         <circle cx="12" cy="17" r="0.5" fill="currentColor"/>
       </svg>
     ),
   },
-  { href: "/stats", label: "Stats" },
-  { href: "/about", label: "About" },
+  { href: "/stats",  label: "Stats" },
+  { href: "/about",  label: "About" },
 ];
 
 export default function Nav() {
@@ -24,27 +24,26 @@ export default function Nav() {
   const router   = useRouter();
 
   return (
-    <header className="flex items-center justify-between px-5 py-3.5 bg-white border-b border-[#e4e7ed]">
+    <header className="flex items-center justify-between px-5 py-3.5 bg-[var(--bg)]/90 backdrop-blur-md border-b border-white/8 sticky top-0 z-20">
       <div className="flex items-center gap-3">
         {pathname !== "/" && (
           <button
             onClick={() => router.back()}
             aria-label="Go back"
-            className="flex items-center gap-1 text-[#64748b] hover:text-[#0f172a] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded px-1 py-1"
+            className="text-white/40 hover:text-white/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded p-1 -ml-1"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M19 12H5M12 5l-7 7 7 7"/>
             </svg>
           </button>
         )}
-
         <Link
           href="/"
-          className="flex items-baseline gap-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded"
+          className="flex items-baseline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded"
           aria-label="moviguessr — home"
         >
           <span className="text-[var(--accent)] font-bold text-xl tracking-tight">movi</span>
-          <span className="text-[#0f172a] font-bold text-xl tracking-tight">guessr</span>
+          <span className="text-white font-bold text-xl tracking-tight">guessr</span>
         </Link>
       </div>
 
@@ -57,7 +56,7 @@ export default function Nav() {
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
               ${pathname === href
                 ? "bg-[var(--accent-light)] text-[var(--accent-deep)]"
-                : "text-[#64748b] hover:text-[#0f172a] hover:bg-[#f1f3f7]"
+                : "text-white/50 hover:text-white hover:bg-white/8"
               }`}
           >
             {mobileIcon ? (
@@ -73,7 +72,7 @@ export default function Nav() {
           className={`ml-1 p-2 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
             ${pathname === "/settings"
               ? "bg-[var(--accent-light)] text-[var(--accent)]"
-              : "text-[#64748b] hover:text-[#0f172a] hover:bg-[#f1f3f7]"
+              : "text-white/50 hover:text-white hover:bg-white/8"
             }`}
           aria-label="Settings"
           title="Settings"

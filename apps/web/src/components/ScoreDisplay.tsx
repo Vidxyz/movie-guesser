@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Difficulty } from "@moviguessr/shared";
-import { getDifficultyLabel, getDifficultyColor } from "@/lib/gameLogic";
+import { getDifficultyLabel } from "@/lib/gameLogic";
 
 interface ScoreDisplayProps {
   streak: number;
@@ -10,35 +10,42 @@ interface ScoreDisplayProps {
   difficulty: Difficulty;
 }
 
+const DIFF_COLORS: Record<Difficulty, string> = {
+  easy:   "text-emerald-400 bg-emerald-500/15 border-emerald-500/30",
+  medium: "text-amber-400   bg-amber-500/15   border-amber-500/30",
+  hard:   "text-rose-400    bg-rose-500/15    border-rose-500/30",
+};
+
 export default function ScoreDisplay({ streak, score, difficulty }: ScoreDisplayProps) {
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-3 bg-white border-b border-[#e4e7ed] shadow-sm">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 bg-[var(--bg)]/90 backdrop-blur-md border-b border-white/8">
+      <div className="flex items-center gap-2.5">
         <Link
           href="/"
-          aria-label="Exit game and go to home"
+          aria-label="Exit game"
           title="Exit game"
-          className="flex items-center gap-1 text-[#94a3b8] hover:text-[#64748b] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded px-1 py-1"
+          className="flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded px-1 py-1 text-xs font-medium"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M19 12H5M12 5l-7 7 7 7"/>
           </svg>
-          <span className="text-xs font-medium">Exit</span>
+          Exit
         </Link>
+        <div className="w-px h-4 bg-white/10" aria-hidden="true" />
         <Link
           href="/"
-          className="flex items-baseline gap-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded"
+          className="flex items-baseline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded"
           aria-label="moviguessr — home"
           tabIndex={-1}
         >
           <span className="text-[var(--accent)] font-bold text-lg tracking-tight">movi</span>
-          <span className="text-[#0f172a] font-bold text-lg tracking-tight">guessr</span>
+          <span className="text-white font-bold text-lg tracking-tight">guessr</span>
         </Link>
       </div>
 
-      <div className="flex items-center gap-2.5" aria-live="polite" aria-atomic="true">
+      <div className="flex items-center gap-2" aria-live="polite" aria-atomic="true">
         <span
-          className={`hidden sm:inline-flex text-xs font-semibold px-2 py-0.5 rounded-full border ${getDifficultyColor(difficulty)}`}
+          className={`hidden sm:inline-flex text-[11px] font-semibold px-2 py-0.5 rounded-full border ${DIFF_COLORS[difficulty]}`}
           title="Current difficulty"
         >
           {getDifficultyLabel(difficulty)}
@@ -46,27 +53,27 @@ export default function ScoreDisplay({ streak, score, difficulty }: ScoreDisplay
 
         {streak > 0 && (
           <div
-            className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 px-2.5 py-1 rounded-full text-sm font-semibold"
+            className="flex items-center gap-1 bg-amber-500/15 border border-amber-500/30 text-amber-400 px-2.5 py-1 rounded-full text-sm font-semibold"
             title="Current streak"
           >
             <span aria-hidden="true">🔥</span>
-            <span className="tabular-nums">{streak}</span>
+            <span className="tabular-nums text-xs">{streak}</span>
             <span className="sr-only">streak</span>
           </div>
         )}
 
         <div
-          className="flex items-center gap-1 bg-[var(--accent-light)] text-[var(--accent-dark)] px-3 py-1 rounded-full text-sm font-bold"
+          className="flex items-center gap-1 bg-[var(--accent-light)] border border-[var(--accent-border)] text-[var(--accent-deep)] px-3 py-1 rounded-full text-sm font-bold"
           title="Total score"
         >
-          <span className="tabular-nums">{score.toLocaleString()}</span>
-          <span className="text-[var(--accent-muted)] text-xs font-semibold">pts</span>
+          <span className="tabular-nums text-xs">{score.toLocaleString()}</span>
+          <span className="text-[var(--accent-muted)] text-[10px] font-semibold">pts</span>
           <span className="sr-only">points</span>
         </div>
 
         <Link
           href="/stats"
-          className="text-sm text-[#64748b] hover:text-[#0f172a] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded px-1"
+          className="text-xs text-white/40 hover:text-white/70 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded px-1"
           aria-label="View your stats"
         >
           Stats

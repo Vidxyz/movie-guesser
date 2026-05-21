@@ -16,13 +16,13 @@ export interface AppSettings {
 }
 
 export const COLOR_PRESETS: ColorPreset[] = [
-  { name: "Indigo",  accent: "#6366f1", dark: "#4f46e5", light: "#ede9fe", border: "#ddd6fe", muted: "#818cf8", deep: "#3730a3" },
-  { name: "Violet",  accent: "#8b5cf6", dark: "#7c3aed", light: "#f5f3ff", border: "#ddd6fe", muted: "#a78bfa", deep: "#4c1d95" },
-  { name: "Rose",    accent: "#f43f5e", dark: "#e11d48", light: "#fff1f2", border: "#fecdd3", muted: "#fb7185", deep: "#9f1239" },
-  { name: "Amber",   accent: "#f59e0b", dark: "#d97706", light: "#fffbeb", border: "#fde68a", muted: "#fbbf24", deep: "#78350f" },
-  { name: "Emerald", accent: "#10b981", dark: "#059669", light: "#ecfdf5", border: "#a7f3d0", muted: "#34d399", deep: "#065f46" },
-  { name: "Blue",    accent: "#3b82f6", dark: "#2563eb", light: "#dbeafe", border: "#bfdbfe", muted: "#60a5fa", deep: "#1e40af" },
-  { name: "Teal",    accent: "#009688", dark: "#00796b", light: "#e0f2f1", border: "#b2dfdb", muted: "#26a69a", deep: "#00695c" },
+  { name: "Indigo",  accent: "#6366f1", dark: "#4f46e5", light: "rgba(99,102,241,0.15)",  border: "rgba(99,102,241,0.30)",  muted: "#818cf8", deep: "#a5b4fc" },
+  { name: "Violet",  accent: "#8b5cf6", dark: "#7c3aed", light: "rgba(139,92,246,0.15)",  border: "rgba(139,92,246,0.30)",  muted: "#a78bfa", deep: "#c4b5fd" },
+  { name: "Rose",    accent: "#f43f5e", dark: "#e11d48", light: "rgba(244,63,94,0.15)",   border: "rgba(244,63,94,0.30)",   muted: "#fb7185", deep: "#fda4af" },
+  { name: "Amber",   accent: "#f59e0b", dark: "#d97706", light: "rgba(245,158,11,0.15)",  border: "rgba(245,158,11,0.30)",  muted: "#fbbf24", deep: "#fcd34d" },
+  { name: "Emerald", accent: "#10b981", dark: "#059669", light: "rgba(16,185,129,0.15)",  border: "rgba(16,185,129,0.30)",  muted: "#34d399", deep: "#6ee7b7" },
+  { name: "Blue",    accent: "#3b82f6", dark: "#2563eb", light: "rgba(59,130,246,0.15)",  border: "rgba(59,130,246,0.30)",  muted: "#60a5fa", deep: "#93c5fd" },
+  { name: "Teal",    accent: "#009688", dark: "#00796b", light: "rgba(0,150,136,0.15)",   border: "rgba(0,150,136,0.30)",   muted: "#26a69a", deep: "#5eead4" },
 ];
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -59,4 +59,5 @@ export function applyPreset(preset: ColorPreset): void {
   root.style.setProperty("--accent-border", preset.border);
   root.style.setProperty("--accent-muted",  preset.muted);
   root.style.setProperty("--accent-deep",   preset.deep);
+  root.style.setProperty("--accent-glow",   preset.border);
 }
