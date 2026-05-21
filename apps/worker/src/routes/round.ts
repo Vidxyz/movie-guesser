@@ -3,9 +3,9 @@ import { MOVIES } from "@moviguessr/shared";
 import type { Round, RoundChoice, Difficulty, MovieInfo } from "@moviguessr/shared";
 
 const DIFFICULTY_CONFIG: Record<Difficulty, { timerSeconds: number; initialBlurPx: number }> = {
-  easy:   { timerSeconds: 45, initialBlurPx: 8  },
-  medium: { timerSeconds: 30, initialBlurPx: 16 },
-  hard:   { timerSeconds: 20, initialBlurPx: 24 },
+  easy:   { timerSeconds: 30, initialBlurPx: 4 },
+  medium: { timerSeconds: 30, initialBlurPx: 6 },
+  hard:   { timerSeconds: 30, initialBlurPx: 8 },
 };
 
 function pickRandom<T>(arr: T[]): T {

@@ -22,15 +22,15 @@ function grade(correct: number): string {
 }
 
 export default function StatsPage() {
-  const [stats, setStats] = useState<GameStats | null>(null);
+  const [stats, setStats]           = useState<GameStats | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => { setStats(loadStats()); }, []);
 
   const handleClear = () => {
-    if (confirm("Reset all stats? This cannot be undone.")) {
-      clearStats();
-      setStats(loadStats());
-    }
+    clearStats();
+    setStats(loadStats());
+    setConfirmOpen(false);
   };
 
   if (!stats) return null;
@@ -234,13 +234,44 @@ export default function StatsPage() {
 
         {hasAny && (
           <button
-            onClick={handleClear}
+            onClick={() => setConfirmOpen(true)}
             className="w-full py-2.5 rounded-xl border border-white/8 text-white/30 text-sm hover:border-red-500/40 hover:text-red-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
           >
             Reset all stats
           </button>
         )}
       </main>
+
+      {confirmOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reset-dialog-heading"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+          onClick={(e) => { if (e.target === e.currentTarget) setConfirmOpen(false); }}
+        >
+          <div className="w-full max-w-xs rounded-2xl border border-white/10 bg-[#070b14] p-6 flex flex-col gap-4 animate-slide-up">
+            <div>
+              <h2 id="reset-dialog-heading" className="text-white font-bold text-base">Reset all stats?</h2>
+              <p className="text-white/40 text-sm mt-1">This will permanently delete your classic runs, infinite history, and all streaks. This cannot be undone.</p>
+            </div>
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/50 text-sm font-medium hover:bg-white/5 hover:text-white/70 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClear}
+                className="flex-1 py-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-sm font-semibold hover:bg-red-500/25 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -59,16 +59,17 @@ export default function GameBoard({ mode }: GameBoardProps) {
     ? getClassicDifficulty(questionNum)
     : infiniteDifficulty;
 
-  // Easing exponent per difficulty:
-  //   easy   0.5 → sqrt, fast early unblur (recognizable in first third)
-  //   medium 1.0 → linear, steady throughout
-  //   hard   1.5 → mild ease-in, clears noticeably in the final ~6 s
-  const easingExponent = difficulty === "easy" ? 0.5 : difficulty === "hard" ? 1.5 : 1.0;
+  // init blur: easy=4px, medium=6px, hard=8px (from worker)
+  // exponents tuned so blur hits ~1.5 px (recognisable) at:
+  //   easy   t=0.40 (12 s) → e≈0.5  (sqrt ease-out, fast early drop)
+  //   medium t=0.70 (21 s) → e≈0.8  (mild ease-out)
+  //   hard   t=0.85 (25.5 s) → e≈1.3 (mild ease-in, holds blur longer)
+  const easingExponent = difficulty === "easy" ? 0.5 : difficulty === "hard" ? 1.3 : 0.8;
 
   const { currentBlurPx, progress } = useBlur(
     startTimeRef,
     round?.timerSeconds ?? 30,
-    round?.initialBlurPx ?? 16,
+    round?.initialBlurPx ?? 6,
     phase !== "playing",
     roundKey,
     easingExponent,

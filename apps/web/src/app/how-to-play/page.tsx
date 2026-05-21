@@ -96,11 +96,11 @@ export default function HowToPlayPage() {
           <div className="space-y-2.5">
             {[
               { label: "Easy",   badge: "×0.75", color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30",
-                desc: "45 seconds, lighter blur (8px). All three decoys are from different genres — the correct movie's genre is unique among the choices." },
+                desc: "30 seconds, lighter blur that clears quickly. All three decoys are from different genres — the correct movie's genre is unique among the choices." },
               { label: "Medium", badge: "×1.0",  color: "text-amber-400 bg-amber-500/15 border-amber-500/30",
-                desc: "30 seconds, moderate blur (16px). One decoy shares the same genre. You'll need to look more carefully." },
+                desc: "30 seconds, moderate blur with steady progression. One decoy shares the same genre. You'll need to look more carefully." },
               { label: "Hard",   badge: "×1.5",  color: "text-rose-400 bg-rose-500/15 border-rose-500/30",
-                desc: "Only 20 seconds, heavy blur (24px). All three decoys are from the same genre. Pure recognition skills required." },
+                desc: "30 seconds, heavier blur that holds longer before clearing. All three decoys are from the same genre. Pure recognition skills required." },
             ].map(({ label, badge, color, desc }) => (
               <div key={label} className="bg-white/4 rounded-xl border border-white/8 px-4 py-3.5">
                 <div className="flex items-center gap-2 mb-1">

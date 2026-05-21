@@ -18,21 +18,21 @@ const DIFFICULTIES: { value: Difficulty; label: string; tag: string; color: stri
     label: "Easy",
     tag: "×0.75",
     color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30",
-    desc: "More time (45s), lighter blur. Decoys are from different genres — easier to rule out.",
+    desc: "30 seconds, lighter blur that clears quickly. Decoys are from different genres — easier to rule out.",
   },
   {
     value: "medium",
     label: "Medium",
     tag: "×1.0",
     color: "text-amber-400 bg-amber-500/15 border-amber-500/30",
-    desc: "30 seconds, moderate blur. One decoy shares the same genre. A balanced challenge.",
+    desc: "30 seconds, moderate blur with steady progression. One decoy shares the same genre. A balanced challenge.",
   },
   {
     value: "hard",
     label: "Hard",
     tag: "×1.5",
     color: "text-rose-400 bg-rose-500/15 border-rose-500/30",
-    desc: "Only 20 seconds, heavy blur. All three decoys share the same genre. Pure recognition skills.",
+    desc: "30 seconds, heavier blur that holds longer. All three decoys share the same genre. Pure recognition skills.",
   },
 ];
 
@@ -112,7 +112,7 @@ export default function SettingsPage() {
         <section aria-labelledby="difficulty-heading">
           <h2 id="difficulty-heading" className="text-sm font-bold text-white mb-1">Difficulty</h2>
           <p className="text-xs text-white/30 mb-4">
-            Affects timer length, initial blur, and how similar the decoys are.
+            Affects blur intensity, how fast it clears, and how similar the decoys are.
           </p>
 
           <div className="flex flex-col gap-2.5">
